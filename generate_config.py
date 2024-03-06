@@ -17,7 +17,8 @@ def generate_config():
         'password': '',
         'host': '',
         'port': '',
-        'connection': 'SYSTEM/qwerty123@localhost:1521/XE'
+        'connection': 'SYSTEM/qwerty123@localhost:1521/XE',
+        'sqlalchemy_connection': 'oracle+cx_oracle://SYSTEM:qwerty123@localhost:1521/XE'
     }
 
     # SQL Files directory configuration
