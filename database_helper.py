@@ -4,6 +4,7 @@ import configparser
 import cx_Oracle
 import pandas as pd
 from time import sleep
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -71,23 +72,26 @@ def fetch_large_data(cursor, chunksize=1000):
     return data
 
 # connect to database and execute given query
-def connect_and_execute_query(connection_string, query):
+def connect_and_execute_query(connection_string, query, output_file):
     try:
         con = cx_Oracle.connect(connection_string)
         logger.info("Connected to database")
-        cursor = con.cursor()
-        cursor.execute(query)
-        logger.info("Executing query")
-        columns = [col[0] for col in cursor.description]
-        data = fetch_large_data(cursor)
-        cursor.close()
-        con.close()
-        if data:
-            result = pd.DataFrame(data, columns=columns)
-            return result
-        else:
-            logger.warning("No data returned from query.")
-            return None
+        with con.cursor() as cursor:
+            cursor.arraysize = 1000  # tune this for large queries
+            f = open(output_file, "w")
+            writer = csv.writer(f, lineterminator="\n")
+            logger.info("Executing query")
+            cursor.execute(query)
+            col_names = [col[0] for col in cursor.description]
+            print("Writing to file...")
+            writer.writerow(col_names)
+            while True:
+                rows = cursor.fetchmany()
+                if not rows:
+                    print("Done")
+                    break
+                writer.writerows(rows)
+            f.close()
     except Exception as e:
         logger.error(f"Error: {e}")
         return None

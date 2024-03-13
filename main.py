@@ -15,12 +15,14 @@ def main():
     env = Environment(loader = FileSystemLoader('sql_files', followlinks=True), trim_blocks=True, lstrip_blocks=True)
 
     env.globals['tableName'] = parameters['tablename']
+    env.globals['ids'] = (1, 2, 3)
     template = env.get_template('HispanicStudents/HispanicStudents.sql')
 
     output = template.render()
 
     print(output)
-    print(connect_and_execute_query(connection_string, output))
+
+    connect_and_execute_query(connection_string, output, output_file="output.csv")
 
     #execute_sql_queries(directory_path, parameters, connection_string)
 if __name__ == "__main__":
