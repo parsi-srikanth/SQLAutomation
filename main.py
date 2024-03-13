@@ -12,11 +12,12 @@ def main():
     #connection_string = config['OracleDB']['sqlalchemy_connection']
     parameters = dict(config.items('parameters'))
 
-    env = Environment(loader = FileSystemLoader('sql_files/Code4'))
+    env = Environment(loader = FileSystemLoader('sql_files', followlinks=True), trim_blocks=True, lstrip_blocks=True)
 
-    template = env.get_template('HispanicStudents.sql')
+    env.globals['tableName'] = parameters['tablename']
+    template = env.get_template('HispanicStudents/HispanicStudents.sql')
 
-    output = template.render(tableName = parameters['tablename'])
+    output = template.render()
 
     print(output)
     print(connect_and_execute_query(connection_string, output))
