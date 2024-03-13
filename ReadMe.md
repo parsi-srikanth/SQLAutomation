@@ -1,0 +1,1 @@
+stackoverflow link : https://stackoverflow.com/questions/13944751/args-kwargs-in-jinja2-macros

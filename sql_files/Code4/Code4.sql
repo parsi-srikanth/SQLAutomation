@@ -1,1 +1,2 @@
-SELECT MAX(amount) FROM {{tableName}} where transaction_id not in {{ids}}
+
+SELECT MAX(amount) FROM {{tableName}} where transaction_id  in {{ids}}
