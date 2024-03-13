@@ -1,1 +1,0 @@
-select * from tablename fetch first numrec2 row only

@@ -32,7 +32,7 @@ def generate_config():
         'password': '',
         'numrec2': 2,
         'numrec': 1,
-        'tablename': "employee"
+        'tablename': "transactions"
     }
 
     with open('configurations.ini', 'w') as configfile:

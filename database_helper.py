@@ -69,3 +69,25 @@ def fetch_large_data(cursor, chunksize=1000):
         data.extend(chunk)
         logger.info("Fetching from chunk...")
     return data
+
+# connect to database and execute given query
+def connect_and_execute_query(connection_string, query):
+    try:
+        con = cx_Oracle.connect(connection_string)
+        logger.info("Connected to database")
+        cursor = con.cursor()
+        cursor.execute(query)
+        logger.info("Executing query")
+        columns = [col[0] for col in cursor.description]
+        data = fetch_large_data(cursor)
+        cursor.close()
+        con.close()
+        if data:
+            result = pd.DataFrame(data, columns=columns)
+            return result
+        else:
+            logger.warning("No data returned from query.")
+            return None
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return None

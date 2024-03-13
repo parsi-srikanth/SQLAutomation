@@ -1,1 +1,1 @@
-select * from tablename fetch first numrec row only
+SELECT MAX(amount) FROM {{tableName}}
