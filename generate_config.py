@@ -26,13 +26,21 @@ def generate_config():
         'DirectoryPath': './sql_files'
     }
 
+    # Parameters configuration
     config['parameters'] = {
         'dbname': '',
         'user': '',
         'password': '',
-        'numrec2': 2,
-        'numrec': 1,
-        'tablename': "transactions"
+        'numrec2': '2',
+        'numrec': '1',
+        'tablename': 'transactions'
+    }
+
+    # Directories configuration
+    config['Directories'] = {
+        'Incoming': 'incoming_requests/',
+        'Processed': 'processed_requests/',
+        'Results': 'results/'
     }
 
     with open('configurations.ini', 'w') as configfile:

@@ -1,8 +1,8 @@
 import os
-import logging
 import cx_Oracle
 import pandas as pd
 import csv
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,8 @@ def execute_query_and_store_output(connection_string, sql_query, output_file_loc
             logger.info("Executing query")
             cursor.execute(sql_query)
             logger.info("Query executed successfully")
+            if not os.path.exists(output_file_location):
+                os.makedirs(output_file_location, exist_ok=True)
             output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
             with open(output_file, 'w', newline='', encoding='utf-8') as f:
                 if output_file_extension == ".xlsx":
