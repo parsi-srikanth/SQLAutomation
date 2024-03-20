@@ -38,9 +38,9 @@ def generate_config():
 
     # Directories configuration
     config['Directories'] = {
-        'Incoming': 'incoming_requests/',
-        'Processed': 'processed_requests/',
-        'Results': 'results/'
+        'Incoming': 'X:/Student Worker Files/Parsi/SQLAutomation/Incoming_Requests/',
+        'Processed': 'X:/Student Worker Files/Parsi/SQLAutomation/Processed_Requests/',
+        'Results': 'X:/Student Worker Files/Parsi/SQLAutomation/Results/'
     }
 
     with open('configurations.ini', 'w') as configfile:

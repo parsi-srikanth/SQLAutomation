@@ -11,7 +11,7 @@ def generate_sql_request(outgoing_dir, sql_query, output_location):
     file_name = f'request_{timestamp}.sql'
     file_path = os.path.join(outgoing_dir, file_name)
     with open(file_path, 'w') as file:
-        file.write(f"-- Metadata - Output Location: {output_location}\n")
+        file.write(f"-- Metadata - Output Location= {output_location}\n")
         file.write(sql_query)
 
 def main():

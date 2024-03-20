@@ -8,6 +8,7 @@ def watch_directory(incoming_dir, processed_dir):
     while True:
         files = os.listdir(incoming_dir)
         if len(files) == 0:
+            logger.info(f"No files found in '{incoming_dir}' directory")
             break
         for file_name in files:
             if file_name.endswith('.sql'):
@@ -20,7 +21,7 @@ def process_request(file_name, incoming_dir, processed_dir):
             metadata = lines[0].strip()
             sql_query = ''.join(lines[1:])
         file_name = file_name.split('.')[0]
-        output_location = metadata.split(':')[1].strip()
+        output_location = metadata.split('=')[1].strip()
         config = helper.read_config()
         connection_string = config['OracleDB']['connection']
         db.execute_query_and_store_output(connection_string, sql_query, output_location, file_name, ".csv")
