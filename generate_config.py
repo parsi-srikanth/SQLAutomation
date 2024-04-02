@@ -38,6 +38,7 @@ def generate_config():
 
     # Directories configuration
     config['Directories'] = {
+        'Failed': 'X:/Student Worker Files/Parsi/SQLAutomation/Failed_Requests/',
         'Incoming': 'X:/Student Worker Files/Parsi/SQLAutomation/Incoming_Requests/',
         'Processed': 'X:/Student Worker Files/Parsi/SQLAutomation/Processed_Requests/',
         'Results': 'X:/Student Worker Files/Parsi/SQLAutomation/Results/'
