@@ -1,5 +1,4 @@
 import os
-import shutil
 import logging
 from datetime import datetime
 from watchdog.observers import Observer
@@ -8,10 +7,12 @@ import helper
 import database_helper as db
 
 class SQLRequestHandler(FileSystemEventHandler):
-    def __init__(self, incoming_dir, processed_dir, failed_dir):
+    def __init__(self, incoming_dir, processed_dir, failed_dir, results_dir, connection_string):
         self.incoming_dir = incoming_dir
         self.processed_dir = processed_dir
         self.failed_dir = failed_dir
+        self.results_dir = results_dir
+        self.connection_string = connection_string
 
     def on_created(self, event):
         if not event.is_directory and event.src_path.endswith('.sql'):
@@ -19,38 +20,36 @@ class SQLRequestHandler(FileSystemEventHandler):
 
     def process_request(self, file_path):
         try:
-            file_name = os.path.basename(file_path)
-            with open(file_path, 'r') as file:
-                lines = file.readlines()
-                metadata = lines[0].strip()
-                sql_query = ''.join(lines[1:])
-            file_name = file_name.split('.')[0]
-            output_location = metadata.split('=')[1].strip()
-            config = helper.read_config()
-            connection_string = config['OracleDB']['connection']
-            db.execute_query_and_store_output(connection_string, sql_query, output_location, file_name, ".csv")
-            logger.info(f"Request '{file_name}' processed successfully")
-            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            processed_file_name = f"{timestamp}_{file_name}.sql"
-            logger.info(f"Renaming file '{file_name}.sql' to '{processed_file_name}' and moving from '{self.incoming_dir}' to '{self.processed_dir}' directory ")
-            shutil.move(file_path, os.path.join(self.processed_dir, processed_file_name))
+            logger.info(f"Processing request '{file_path}'")
+            isSuccessful = False
+            metadata, sql_query = helper.extract_metadata_and_sql_from_file(file_path)
+            
+            file_name = file_path.split('/')[-1].replace('.sql', '')
+            output_location = metadata.get('OutputLocation', self.results_dir)
+            
+            db.execute_query_and_store_output(self.connection_string, sql_query, output_location, file_name, ".csv")
+            isSuccessful = True
         except Exception as e:
             logger.error(f"Error processing request '{file_name}': {e}")
-            logger.info(f"Moving failed request '{file_name}.sql' to '{self.failed_dir}' directory")
-            shutil.move(file_path, os.path.join(self.failed_dir, f"{file_name}_failed.sql"))
-
+        finally:
+            new_metadata = {'ProcessStatus': 'Success' if isSuccessful else 'Failed', 'TimeProcessed': datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+            helper.update_metadata_and_move_file(file_path, new_metadata, self.processed_dir if isSuccessful else self.failed_dir)
+            logger.info(f"Moving {'processed' if isSuccessful else 'failed'} request '{file_name}.sql' to '{self.processed_dir if isSuccessful else self.failed_dir}' directory")
+            
 if __name__ == "__main__":
     config = helper.read_config()
     incoming_dir = config['Directories']['Incoming']
     processed_dir = config['Directories']['Processed']
     failed_dir = config['Directories']['Failed']
+    results_dir = config['Directories']['Results']
+    connection_string = config['OracleDB']['connection']
     if not os.path.exists(processed_dir):
         os.makedirs(processed_dir)
     if not os.path.exists(failed_dir):
         os.makedirs(failed_dir)
     logger = helper.setup_logger(config)
 
-    event_handler = SQLRequestHandler(incoming_dir, processed_dir, failed_dir)
+    event_handler = SQLRequestHandler(incoming_dir, processed_dir, failed_dir, results_dir, connection_string)
     observer = Observer()
     observer.schedule(event_handler, path=incoming_dir, recursive=False)
     observer.start()
