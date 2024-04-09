@@ -7,12 +7,12 @@ import helper
 import database_helper as db
 
 class SQLRequestHandler(FileSystemEventHandler):
-    def __init__(self, incoming_dir, processed_dir, failed_dir, results_dir, connection_string):
+    def __init__(self, incoming_dir, processed_dir, failed_dir, results_dir, pool):
         self.incoming_dir = incoming_dir
         self.processed_dir = processed_dir
         self.failed_dir = failed_dir
         self.results_dir = results_dir
-        self.connection_string = connection_string
+        self.pool = pool
 
     def on_created(self, event):
         if not event.is_directory and event.src_path.endswith('.sql'):
@@ -22,17 +22,18 @@ class SQLRequestHandler(FileSystemEventHandler):
         try:
             logger.info(f"Processing request '{file_path}'")
             isSuccessful = False
+            file_name = file_path.split('/')[-1].replace('.sql', '')
             metadata, sql_query = helper.extract_metadata_and_sql_from_file(file_path)
             
-            file_name = file_path.split('/')[-1].replace('.sql', '')
             output_location = metadata.get('OutputLocation', self.results_dir)
             
-            db.execute_query_and_store_output(self.connection_string, sql_query, output_location, file_name, ".csv")
+            db.execute_query_and_store_output(self.pool, sql_query, output_location, file_name, ".csv")
             isSuccessful = True
         except Exception as e:
+            error = str(e)
             logger.error(f"Error processing request '{file_name}': {e}")
         finally:
-            new_metadata = {'ProcessStatus': 'Success' if isSuccessful else 'Failed', 'TimeProcessed': datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+            new_metadata = {'ProcessStatus': 'Success' if isSuccessful else ('Failed' + error) , 'TimeProcessed': datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
             helper.update_metadata_and_move_file(file_path, new_metadata, self.processed_dir if isSuccessful else self.failed_dir)
             logger.info(f"Moving {'processed' if isSuccessful else 'failed'} request '{file_name}.sql' to '{self.processed_dir if isSuccessful else self.failed_dir}' directory")
             
@@ -42,16 +43,26 @@ if __name__ == "__main__":
     processed_dir = config['Directories']['Processed']
     failed_dir = config['Directories']['Failed']
     results_dir = config['Directories']['Results']
-    connection_string = config['OracleDB']['connection']
-    if not os.path.exists(processed_dir):
-        os.makedirs(processed_dir)
-    if not os.path.exists(failed_dir):
-        os.makedirs(failed_dir)
-    logger = helper.setup_logger(config)
+    username = config['OracleDB']['user']
+    password = config['OracleDB']['password']
+    dsn = config['OracleDB']['DSN']
 
-    event_handler = SQLRequestHandler(incoming_dir, processed_dir, failed_dir, results_dir, connection_string)
+    pool = db.DatabasePool(user=username, password=password, dsn=dsn)
+    logger = helper.setup_logger(config)
+    # Create directories if they do not exist
+    for directory in [processed_dir, failed_dir]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    # Process existing files
+    existing_files = [os.path.join(incoming_dir, f) for f in os.listdir(incoming_dir) if os.path.isfile(os.path.join(incoming_dir, f))]
+    for file_path in existing_files:
+        event_handler = SQLRequestHandler(incoming_dir, processed_dir, failed_dir, results_dir, pool)
+        event_handler.process_request(file_path)
+
+    # Start watchdog observer
     observer = Observer()
-    observer.schedule(event_handler, path=incoming_dir, recursive=False)
+    observer.schedule(SQLRequestHandler(incoming_dir, processed_dir, failed_dir, results_dir, pool), path=incoming_dir, recursive=False)
     observer.start()
 
     try:
@@ -60,3 +71,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         observer.stop()
         logger.info("Server stopped")
+    finally:
+        pool.close_pool()
+        logger.info("Database connection pool closed")
+

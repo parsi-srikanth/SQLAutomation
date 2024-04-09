@@ -6,9 +6,48 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def execute_query_and_store_output(connection_string, sql_query, output_file_location, output_file_name, output_file_extension):
+import cx_Oracle
+
+class DatabasePool:
+    def __init__(self, user, password, dsn, min_connections=2, max_connections=5, increment=1, encoding="UTF-8"):
+        self.user = user
+        self.password = password
+        self.dsn = dsn
+        self.min_connections = min_connections
+        self.max_connections = max_connections
+        self.increment = increment
+        self.encoding = encoding
+        self.pool = None
+
+    def create_pool(self):
+        self.pool = cx_Oracle.SessionPool(
+            user=self.user,
+            password=self.password,
+            dsn=self.dsn,
+            min=self.min_connections,
+            max=self.max_connections,
+            increment=self.increment,
+            encoding=self.encoding
+        )
+
+    def get_connection(self):
+        if self.pool is None:
+            self.create_pool()
+        return self.pool.acquire()
+
+    def release_connection(self, connection):
+        self.pool.release(connection)
+
+    def close_pool(self):
+        if self.pool:
+            self.pool.close()
+            self.pool = None
+
+
+def execute_query_and_store_output(pool, sql_query, output_file_location, output_file_name, output_file_extension):
+    con = None
     try:
-        con = cx_Oracle.connect(connection_string)
+        con = pool.get_connection()
         logger.info("Connected to database")
 
         with con.cursor() as cursor:
@@ -16,6 +55,8 @@ def execute_query_and_store_output(connection_string, sql_query, output_file_loc
             logger.info("Executing query")
             cursor.execute(sql_query)
             logger.info("Query executed successfully")
+            
+            # Save data to file, etc.
             if not os.path.exists(output_file_location):
                 os.makedirs(output_file_location, exist_ok=True)
             output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
@@ -44,5 +85,6 @@ def execute_query_and_store_output(connection_string, sql_query, output_file_loc
 
     finally:
         if con:
-            con.close()
-            logger.info("Database connection closed")
+            pool.release_connection(con)
+            logger.info("Database connection released")
+

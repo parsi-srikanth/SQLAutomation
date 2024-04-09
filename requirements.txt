@@ -12,6 +12,7 @@ pandas==2.2.1
 pycparser==2.21
 python-dateutil==2.9.0.post0
 pytz==2024.1
+PyYAML==6.0.1
 six==1.16.0
 SQLAlchemy==2.0.28
 typing_extensions==4.10.0

@@ -13,10 +13,11 @@ def generate_config():
     # Database configuration
     config['OracleDB'] = {
         'dbname': '',
-        'user': '',
-        'password': '',
-        'host': '',
-        'port': '',
+        'user': 'SYSTEM',
+        'password': 'qwerty123',
+        'host': 'localhost',
+        'port': '1521',
+        'DSN': 'localhost:1521/XE',
         'connection': 'SYSTEM/qwerty123@localhost:1521/XE',
         'sqlalchemy_connection': 'oracle+cx_oracle://SYSTEM:qwerty123@localhost:1521/XE'
     }

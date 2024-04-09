@@ -70,7 +70,7 @@ def update_metadata_and_move_file(sql_file_path, new_metadata, destination_folde
 
         return True  # Success
     except Exception as e:
-        print(f"Error updating metadata and moving file: {e}")
+        logger.error(f"Error updating metadata and moving file: {e}")
         return False  # Error occurred
 
 def update_metadata_in_content(file_content, new_metadata):
