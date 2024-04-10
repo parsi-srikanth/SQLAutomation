@@ -3,13 +3,12 @@ import cx_Oracle
 import pandas as pd
 import csv
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
-import cx_Oracle
-
 class DatabasePool:
-    def __init__(self, user, password, dsn, min_connections=2, max_connections=5, increment=1, encoding="UTF-8"):
+    def __init__(self, user, password, dsn, min_connections=1, max_connections=3, increment=1, encoding="UTF-8"):
         self.user = user
         self.password = password
         self.dsn = dsn
@@ -56,7 +55,6 @@ def execute_query_and_store_output(pool, sql_query, output_file_location, output
             cursor.execute(sql_query)
             logger.info("Query executed successfully")
             
-            # Save data to file, etc.
             if not os.path.exists(output_file_location):
                 os.makedirs(output_file_location, exist_ok=True)
             output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
@@ -66,8 +64,7 @@ def execute_query_and_store_output(pool, sql_query, output_file_location, output
                 elif output_file_extension == ".csv":
                     writer = csv.writer(f)
                 else:
-                    logger.error("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
-                    return
+                    raise ValueError("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
 
                 columns = [col[0] for col in cursor.description]
                 writer.writerow(columns)
@@ -82,9 +79,9 @@ def execute_query_and_store_output(pool, sql_query, output_file_location, output
 
     except Exception as e:
         logger.error(f"Error: {e}")
+        raise  # Re-raise the exception to propagate it further
 
     finally:
         if con:
             pool.release_connection(con)
             logger.info("Database connection released")
-
