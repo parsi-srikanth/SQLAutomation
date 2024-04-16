@@ -1,3 +1,5 @@
+aiofiles==23.2.1
+asyncio==3.4.3
 cffi==1.16.0
 cryptography==42.0.5
 cx_Oracle==8.3.0

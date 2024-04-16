@@ -48,6 +48,6 @@ Below are the steps to install and execute the SQLAutomation project:
    python main.py
    ```
 
-10. Store the jinja templates/ sql queries in sql_files folder
+10. Store the jinja templates/ sql queries in sql_files folder.
 
 By following these steps, you can automate SQL query execution and save data to excel or csv files with SQLAutomation.

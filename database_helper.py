@@ -1,14 +1,16 @@
 import os
-import cx_Oracle
+import logging
+import aiofiles
 import pandas as pd
 import csv
-import logging
+import asyncio
+import cx_Oracle
 import json
 
 logger = logging.getLogger(__name__)
 
 class DatabasePool:
-    def __init__(self, user, password, dsn, min_connections=1, max_connections=3, increment=1, encoding="UTF-8"):
+    def __init__(self, user, password, dsn, min_connections=1, max_connections=3, increment=1, timeout=600, encoding="UTF-8"):
         self.user = user
         self.password = password
         self.dsn = dsn
@@ -16,9 +18,10 @@ class DatabasePool:
         self.max_connections = max_connections
         self.increment = increment
         self.encoding = encoding
+        self.timeout = timeout
         self.pool = None
 
-    def create_pool(self):
+    async def create_pool(self):
         self.pool = cx_Oracle.SessionPool(
             user=self.user,
             password=self.password,
@@ -26,62 +29,58 @@ class DatabasePool:
             min=self.min_connections,
             max=self.max_connections,
             increment=self.increment,
-            encoding=self.encoding
+            encoding=self.encoding,
+            timeout=self.timeout,
         )
 
-    def get_connection(self):
+    async def get_connection(self):
         if self.pool is None:
-            self.create_pool()
+            await self.create_pool()
         return self.pool.acquire()
 
-    def release_connection(self, connection):
+    async def release_connection(self, connection):
         self.pool.release(connection)
 
-    def close_pool(self):
+    async def close_pool(self):
         if self.pool:
             self.pool.close()
             self.pool = None
 
 
-def execute_query_and_store_output(pool, sql_query, output_file_location, output_file_name, output_file_extension):
-    con = None
+async def execute_query_and_store_output(pool, sql_query, output_file_location, output_file_name, output_file_extension):
+    con = await pool.get_connection()  # Await the coroutine function
+    logger.info("Connected to database")
+
     try:
-        con = pool.get_connection()
-        logger.info("Connected to database")
+        cursor = con.cursor()
+        cursor.arraysize = 1000
+        logger.info("Executing query")
+        cursor.execute(sql_query)
+        logger.info("Query executed successfully")
+        
+        if not os.path.exists(output_file_location):
+            os.makedirs(output_file_location, exist_ok=True)
+        output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
+        async with aiofiles.open(output_file, 'w', newline='', encoding='utf-8') as f:
+            if output_file_extension == ".xlsx":
+                writer = pd.ExcelWriter(f, engine='xlsxwriter')
+            elif output_file_extension == ".csv":
+                writer = csv.writer(f)
+            else:
+                raise ValueError("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
 
-        with con.cursor() as cursor:
-            cursor.arraysize = 1000
-            logger.info("Executing query")
-            cursor.execute(sql_query)
-            logger.info("Query executed successfully")
-            
-            if not os.path.exists(output_file_location):
-                os.makedirs(output_file_location, exist_ok=True)
-            output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
-            with open(output_file, 'w', newline='', encoding='utf-8') as f:
-                if output_file_extension == ".xlsx":
-                    writer = pd.ExcelWriter(f, engine='xlsxwriter')
-                elif output_file_extension == ".csv":
-                    writer = csv.writer(f)
-                else:
-                    raise ValueError("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
+            columns = [col[0] for col in cursor.description]
+            await writer.writerow(columns)
+            logger.info("Writing data to file")
+            for row in cursor:
+                await writer.writerow(row)
 
-                columns = [col[0] for col in cursor.description]
-                writer.writerow(columns)
-
-                while True:
-                    rows = cursor.fetchmany()
-                    if not rows:
-                        break
-                    writer.writerows(rows)
-
-            logger.info(f"Data stored successfully to {output_file}")
+        logger.info(f"Data stored successfully to {output_file}")
 
     except Exception as e:
         logger.error(f"Error: {e}")
         raise  # Re-raise the exception to propagate it further
 
     finally:
-        if con:
-            pool.release_connection(con)
-            logger.info("Database connection released")
+        await pool.release_connection(con)  # Await the coroutine function
+        logger.info("Database connection released")
