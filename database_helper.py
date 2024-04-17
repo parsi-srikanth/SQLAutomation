@@ -31,6 +31,7 @@ class DatabasePool:
             increment=self.increment,
             encoding=self.encoding,
             timeout=self.timeout,
+            getmode=cx_Oracle.SPOOL_ATTRVAL_WAIT  # Wait for a connection if no connections are available
         )
 
     async def get_connection(self):
