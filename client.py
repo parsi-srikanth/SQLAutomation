@@ -7,7 +7,7 @@ import json
 
 logger = logging.getLogger(__name__)
 
-def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, process_status):
+def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, process_status, file_name):
     """Generate an SQL request JSON file.
 
     Args:
@@ -23,12 +23,13 @@ def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, pr
     try:
         if not os.path.exists(outgoing_dir):
             os.makedirs(outgoing_dir)
-        timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
-        file_name = f'request_{timestamp}.json'
+        #timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
+        timestamp = time.strftime('%m-%d-%Y %I-%M-%S %p')
+        file_name = f'{file_name}_{timestamp}.json'
         file_path = os.path.join(outgoing_dir, file_name)
         
         # Replace newline characters with space
-        sql_query = sql_query.replace('\n', '')
+        #sql_query = sql_query.replace('\n', '')
         
         # Construct data dictionary
         data = {
@@ -56,24 +57,29 @@ def main():
         logger = helper.setup_logger(config)
         
         directory_path = config['SQLFiles']['DirectoryPath']
-        connection_string = config['OracleDB']['connection']
         parameters = dict(config.items('parameters'))
         outgoing_dir = config['Directories']['Incoming']
-        output_location = config['Directories']['Results']
+        output_location = config['client']['output_location']
 
         env = Environment(loader=FileSystemLoader(directory_path, followlinks=True), trim_blocks=True, lstrip_blocks=True)
         env.globals['tableName'] = parameters['tablename']
         env.globals['ids'] = (1, 2, 3)
-        template = env.get_template('HispanicStudents/HispanicStudents.sql')
+        
+        template_path = config['client']['sql_template']
+        file_name = os.path.basename(template_path).replace('.sql', '')
+        template = env.get_template(template_path)
 
         sql_query = template.render()
 
         # Provide metadata parameters
-        requestor = "SP"  
-        process_status = "Pending"  
+        requestor = config['client']['requestor']
+        process_status = config['client']['process_status']
+
+        if not os.path.exists(outgoing_dir):
+            os.makedirs(outgoing_dir)
 
         logger.info("Generated SQL query")
-        generate_sql_request(outgoing_dir, sql_query, output_location, requestor, process_status)
+        generate_sql_request(outgoing_dir, sql_query, output_location, requestor, process_status, file_name)
         logger.info("SQL request generated successfully")
 
     except Exception as e:

@@ -12,14 +12,11 @@ def generate_config():
 
     # Database configuration
     config['OracleDB'] = {
-        'dbname': '',
         'user': 'SYSTEM',
         'password': 'qwerty123',
         'host': 'localhost',
         'port': '1521',
-        'DSN': 'localhost:1521/XE',
-        'connection': 'SYSTEM/qwerty123@localhost:1521/XE',
-        'sqlalchemy_connection': 'oracle+cx_oracle://SYSTEM:qwerty123@localhost:1521/XE'
+        'service_name': 'XE'
     }
 
     # SQL Files directory configuration
@@ -29,12 +26,14 @@ def generate_config():
 
     # Parameters configuration
     config['parameters'] = {
-        'dbname': '',
-        'user': '',
-        'password': '',
-        'numrec2': '2',
-        'numrec': '1',
         'tablename': 'transactions'
+    }
+
+    config['client'] = {
+        'requestor': 'Parsi',
+        'process_status': 'Pending',
+        'sql_template': 'HispanicStudents/HispanicStudents.sql',
+        'output_location': 'X:/Student Worker Files/Parsi/SQLAutomation/Results/'
     }
 
     # Directories configuration

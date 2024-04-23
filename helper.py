@@ -74,6 +74,16 @@ def update_metadata_and_move_file(json_file_path, new_metadata, destination_fold
         file_name = os.path.basename(json_file_path)
         shutil.move(json_file_path, os.path.join(destination_folder, file_name))
 
+        if data['Metadata']['ProcessStatus'] == 'Failed':
+            #copy output file to failed directory
+            output_file = data['Metadata']['OutputLocation']
+            output_file_name = file_name.replace('.json', '.csv')
+            if os.path.exists(os.path.join(output_file, output_file_name)):
+                shutil.copy(os.path.join(output_file, output_file_name), os.path.join(destination_folder, output_file_name))
+                logger.info(f"Output file '{output_file_name}' copied to '{destination_folder}' directory")
+            else:
+                logger.error(f"Output file '{output_file_name}' not found in '{output_file}' directory")
+
         return True  # Success
     except Exception as e:
         logger.error(f"Error updating metadata and moving file '{json_file_path}': {e}")

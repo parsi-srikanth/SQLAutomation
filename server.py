@@ -98,13 +98,13 @@ async def main():
     results_dir = config['Directories']['Results']
     username = config['OracleDB']['user']
     password = config['OracleDB']['password']
-    dsn = config['OracleDB']['DSN']
+    dsn = f"{config['OracleDB']['host']}:{config['OracleDB']['port']}/{config['OracleDB']['service_name']}"
 
     pool = db.DatabasePool(user=username, password=password, dsn=dsn)
     helper.setup_logger(config)
     processor = SQLProcessor(incoming_dir, processed_dir, failed_dir, results_dir, pool)
     # Create directories if they do not exist
-    for directory in [processed_dir, failed_dir]:
+    for directory in [incoming_dir, processed_dir, failed_dir]:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
