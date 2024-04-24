@@ -38,9 +38,11 @@ class SQLProcessor:
             logger.error(f"Error processing request '{file_name}': {error}")
             raise  # Re-raise the exception to propagate it further
         finally:
-            new_metadata = {'ProcessStatus': 'Success' if is_successful else ('Failed : ' + error), 'TimeProcessed': datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
             try:
+                new_metadata = {'ProcessStatus': 'Success' if is_successful else ('Failed : ' + error), 'TimeProcessed': datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
+                # Remove the file from the dictionary after processing
                 self.move_file(file_path, is_successful, new_metadata)
+                del file_status[file_path]
             except Exception as e:
                 logger.error(f"Error moving or updating metadata for request '{file_name}': {e}")
 
@@ -50,6 +52,7 @@ class SQLProcessor:
         # Move the file and update metadata
         helper.update_metadata_and_move_file(file_path, metadata, dest_dir)
         logger.info(f"Moving {'processed' if is_successful else 'failed'} request '{os.path.basename(file_path)}' to '{dest_dir}' directory")
+
 
 async def update_file_status(incoming_dir):
     global file_status
@@ -80,14 +83,14 @@ async def process_files(pool, processor):
             await asyncio.sleep(10)
             continue
         else:
+            tasks = []
             for file_path in files_to_process:
                 # Mark the file as picked
                 file_status[file_path] = True
                 # Process the file asynchronously
-                await processor.process_request(file_path)
-                # Remove the file from the dictionary after processing
-                del file_status[file_path]
-
+                tasks.append(asyncio.create_task(processor.process_request(file_path)))
+            # Wait for all tasks to complete
+            await asyncio.gather(*tasks)
 
 
 async def main():
@@ -109,10 +112,12 @@ async def main():
             os.makedirs(directory)
 
     # Start updating file status asynchronously
-    asyncio.create_task(update_file_status(incoming_dir))
+    file_status_task = asyncio.create_task(update_file_status(incoming_dir))
 
     # Start processing files asynchronously
-    asyncio.create_task(process_files(pool, processor))
+    file_process_task = asyncio.create_task(process_files(pool, processor))
+
+    await asyncio.gather(file_status_task, file_process_task)
 
     # Run the event loop indefinitely
     while True:

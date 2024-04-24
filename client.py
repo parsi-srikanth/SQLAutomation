@@ -4,6 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 import os
 import time
 import json
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +24,9 @@ def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, pr
     try:
         if not os.path.exists(outgoing_dir):
             os.makedirs(outgoing_dir)
-        #timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
         timestamp = time.strftime('%m-%d-%Y %I-%M-%S %p')
         file_name = f'{file_name}_{timestamp}.json'
         file_path = os.path.join(outgoing_dir, file_name)
-        
-        # Replace newline characters with space
-        #sql_query = sql_query.replace('\n', '')
         
         # Construct data dictionary
         data = {
@@ -51,7 +48,7 @@ def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, pr
         logger.error(f"Error generating SQL request JSON file: {e}")
         raise
 
-def main():
+def main(sql_file):
     try:
         config = helper.read_config()
         logger = helper.setup_logger(config)
@@ -65,7 +62,15 @@ def main():
         env.globals['tableName'] = parameters['tablename']
         env.globals['ids'] = (1, 2, 3)
         
-        template_path = config['client']['sql_template']
+        if sql_file:
+            # remove the directory path from the sql_file
+            sql_file = sql_file.split('sql_files\\')[1] #replace sql_files with the directory path of the sql files
+            sql_file = sql_file.replace('\\', '/')
+            logger.info(f"SQL file: {sql_file} is being used as the template.")
+            template_path = sql_file
+        else:
+            logger.info("Using the default SQL template.")
+            template_path = config['client']['sql_template']
         file_name = os.path.basename(template_path).replace('.sql', '')
         template = env.get_template(template_path)
 
@@ -87,4 +92,7 @@ def main():
         raise
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        main(None)
+    else:
+        main(sys.argv[1])

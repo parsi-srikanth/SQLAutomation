@@ -9,6 +9,11 @@ import json
 
 logger = logging.getLogger(__name__)
 
+#TODO : add instrcutions to install Oracle Instant Client and cx_Oracle in the README.md file
+
+# Uncomment below line if you are using Oracle Instant Client. Make sure to provide the correct path to the instant client directory.
+#cx_Oracle.init_oracle_client(lib_dir=r"C:\oracle\instantclient_19_9")
+
 class DatabasePool:
     def __init__(self, user, password, dsn, min_connections=1, max_connections=3, increment=1, timeout=600, encoding="UTF-8"):
         self.user = user
@@ -62,19 +67,24 @@ async def execute_query_and_store_output(pool, sql_query, output_file_location, 
         if not os.path.exists(output_file_location):
             os.makedirs(output_file_location, exist_ok=True)
         output_file = os.path.join(output_file_location, output_file_name + output_file_extension)
-        async with aiofiles.open(output_file, 'w', newline='', encoding='utf-8') as f:
-            if output_file_extension == ".xlsx":
-                writer = pd.ExcelWriter(f, engine='xlsxwriter')
-            elif output_file_extension == ".csv":
-                writer = csv.writer(f)
-            else:
-                raise ValueError("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
+        
+        if output_file_extension == ".xlsx":
+            writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
+        elif output_file_extension == ".csv":
+            writer = csv.writer(open(output_file, 'w', newline='', encoding='utf-8'))
+        else:
+            raise ValueError("Unsupported output file format. Supported formats are Excel (.xlsx) and CSV (.csv)")
 
-            columns = [col[0] for col in cursor.description]
-            await writer.writerow(columns)
-            logger.info("Writing data to file")
-            for row in cursor:
-                await writer.writerow(row)
+        columns = [col[0] for col in cursor.description]
+        writer.writerow(columns)
+        logger.info("Writing data to file")
+
+        # Fetch rows in batches and write them to the file
+        while True:
+            rows = cursor.fetchmany(1000)  # Fetch 1000 rows at a time
+            if not rows:
+                break
+            await asyncio.get_event_loop().run_in_executor(None, writer.writerows, rows)
 
         logger.info(f"Data stored successfully to {output_file}")
 
