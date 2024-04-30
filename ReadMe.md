@@ -51,3 +51,23 @@ Below are the steps to install and execute the SQLAutomation project:
 10. Store the jinja templates/ sql queries in sql_files folder.
 
 By following these steps, you can automate SQL query execution and save data to excel or csv files with SQLAutomation.
+
+## How to run client
+
+11. Update the generate_config.py > [client] section with appropriate data for sql_template.
+
+12. Execute in new terminal.
+    ```
+    python generate_config.py
+    ```
+
+13. Execute the client script.
+   ```
+   python client.py
+   ```
+**For each new sql query steps 11 - 13 needs to be done.**
+
+## How to trigger client via shell script.
+
+14. Select the required sql file from the **sql_files** directory in the project structure.
+15. Drag and drop this file onto the sql_client.bat file in the project root directory. 
