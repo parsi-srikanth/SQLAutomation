@@ -25,6 +25,7 @@ class DatabasePool:
         self.encoding = encoding
         self.timeout = timeout
         self.pool = None
+        self.number_of_connections = 0
 
     async def create_pool(self):
         self.pool = cx_Oracle.SessionPool(
@@ -35,17 +36,22 @@ class DatabasePool:
             max=self.max_connections,
             increment=self.increment,
             encoding=self.encoding,
-            timeout=self.timeout,
-            getmode=cx_Oracle.SPOOL_ATTRVAL_WAIT  # Wait for a connection if no connections are available
+            timeout=self.timeout
         )
 
     async def get_connection(self):
         if self.pool is None:
             await self.create_pool()
-        return self.pool.acquire()
+        if self.number_of_connections < self.max_connections:
+            self.number_of_connections += 1
+            return self.pool.acquire()
+        else:
+            raise Exception("Maximum number of connections reached")
 
     async def release_connection(self, connection):
-        self.pool.release(connection)
+        if connection and self.number_of_connections < self.max_connections and self.number_of_connections > 0:
+            self.number_of_connections -= 1
+            self.pool.release(connection)
 
     async def close_pool(self):
         if self.pool:

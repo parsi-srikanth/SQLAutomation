@@ -3,7 +3,7 @@ setlocal
 
 rem Set the path to your virtual environment's activate script
 set VENV_PATH=C:\Users\C00541311\Desktop\SQLAutomation\sqlAuto-venv\Scripts\activate.bat
-
+set PYTHON_SCRIPT=client.py
 rem Check if the virtual environment activate script exists
 if not exist "%VENV_PATH%" (
     echo Virtual environment not found. Please provide the correct path to your virtual environment's activate script.
@@ -32,6 +32,6 @@ if errorlevel 1 (
 rem Call the Python script with the full path of the dropped SQL file
 cd ..
 cd ..
-python client.py "%~f1"
+python "%PYTHON_SCRIPT%" "%~f1"
 pause
 endlocal

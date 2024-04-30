@@ -74,7 +74,7 @@ def update_metadata_and_move_file(json_file_path, new_metadata, destination_fold
         file_name = os.path.basename(json_file_path)
         shutil.move(json_file_path, os.path.join(destination_folder, file_name))
 
-        if data['Metadata']['ProcessStatus'] == 'Failed':
+        if 'Failed' in data['Metadata']['ProcessStatus']:
             #copy output file to failed directory
             output_file = data['Metadata']['OutputLocation']
             output_file_name = file_name.replace('.json', '.csv')

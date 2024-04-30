@@ -85,10 +85,11 @@ async def process_files(pool, processor):
         else:
             tasks = []
             for file_path in files_to_process:
-                # Mark the file as picked
-                file_status[file_path] = True
-                # Process the file asynchronously
-                tasks.append(asyncio.create_task(processor.process_request(file_path)))
+                if pool.number_of_connections < pool.max_connections:
+                    # Mark the file as picked
+                    file_status[file_path] = True
+                    # Process the file asynchronously
+                    tasks.append(asyncio.create_task(processor.process_request(file_path)))
             # Wait for all tasks to complete
             await asyncio.gather(*tasks)
 
