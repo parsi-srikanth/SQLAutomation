@@ -16,7 +16,9 @@ def generate_config():
         'password': 'qwerty123',
         'host': 'localhost',
         'port': '1521',
-        'service_name': 'XE'
+        'service_name': 'XE',
+        'InstantClientPath': 'C:/oracle/instantclient_19_9'
+        
     }
 
     # SQL Files directory configuration

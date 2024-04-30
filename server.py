@@ -85,7 +85,11 @@ async def process_files(pool, processor):
         else:
             tasks = []
             for file_path in files_to_process:
-                if pool.number_of_connections < pool.max_connections:
+                if pool.number_of_connections == pool.max_connections:
+                    logger.info("Maximum number of connections reached. Waiting for a connection to be released...")
+                    await asyncio.sleep(10)
+                    continue
+                elif pool.number_of_connections < pool.max_connections:
                     # Mark the file as picked
                     file_status[file_path] = True
                     # Process the file asynchronously

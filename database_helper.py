@@ -9,10 +9,7 @@ import json
 
 logger = logging.getLogger(__name__)
 
-#TODO : add instrcutions to install Oracle Instant Client and cx_Oracle in the README.md file
-
-# Uncomment below line if you are using Oracle Instant Client. Make sure to provide the correct path to the instant client directory.
-#cx_Oracle.init_oracle_client(lib_dir=r"C:\oracle\instantclient_19_9")
+#cx_Oracle.init_oracle_client(lib_dir=config['OracleDB']['InstantClientPath'])
 
 class DatabasePool:
     def __init__(self, user, password, dsn, min_connections=1, max_connections=3, increment=1, timeout=600, encoding="UTF-8"):
@@ -44,14 +41,18 @@ class DatabasePool:
             await self.create_pool()
         if self.number_of_connections < self.max_connections:
             self.number_of_connections += 1
-            return self.pool.acquire()
+            try:
+                return self.pool.acquire()
+            except Exception as e:
+                self.number_of_connections -= 1
+                raise e
         else:
             raise Exception("Maximum number of connections reached")
 
     async def release_connection(self, connection):
         if connection and self.number_of_connections < self.max_connections and self.number_of_connections > 0:
-            self.number_of_connections -= 1
             self.pool.release(connection)
+            self.number_of_connections -= 1
 
     async def close_pool(self):
         if self.pool:
