@@ -39,7 +39,7 @@ Below are the steps to install and execute the SQLAutomation project:
    ```
 ## How to run server
 
-8. Execute 
+8. Execute this during 1st execution and whenever there is a change in configuration file.
     ```
     python generate_config.py
     ```
@@ -57,7 +57,7 @@ By following these steps, you can automate SQL query execution and save data to 
 
 11. Update the generate_config.py > [client] section with appropriate data for sql_template.
 
-12. Execute in new terminal.
+12. Execute in new terminal. Execute this during 1st execution and whenever there is a change in configuration file.
     ```
     python generate_config.py
     ```
