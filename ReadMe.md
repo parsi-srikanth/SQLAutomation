@@ -71,4 +71,13 @@ By following these steps, you can automate SQL query execution and save data to 
 ## How to trigger client via shell script.
 
 14. Select the required sql file from the **sql_files** directory in the project structure.
-15. Drag and drop this file onto the sql_client.bat file in the project root directory. 
+15. Drag and drop this file onto the sql_client.bat file in the project root directory.
+
+## Error Resoultion:
+If you face the below error, then go to detabase_helper.py class and uncomment line 15.
+**Error:** cx_Oracle.DatabaseError: DPI-1047: Cannot locate a 64-bit Oracle Client library: "The specified module could not be found".
+
+a. Download the oracle instant client for your system from "https://www.oracle.com/database/technologies/instant-client/downloads.html"
+b. Give the path from you installation in line 15.
+c. Run the code now and check.
+
