@@ -43,9 +43,9 @@ Below are the steps to install and execute the SQLAutomation project:
     python generate_config.py
     ```
 
-9. Execute the main Python script:
+9. Execute the server Python script:
    ```
-   python main.py
+   python server.py
    ```
 
 10. Store the jinja templates/ sql queries in sql_files folder.
