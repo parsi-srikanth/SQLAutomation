@@ -37,6 +37,7 @@ Below are the steps to install and execute the SQLAutomation project:
    ```
    python -m pip freeze > requirements.txt
    ```
+## How to run server
 
 8. Execute 
     ```
