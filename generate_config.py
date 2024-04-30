@@ -23,7 +23,7 @@ def generate_config():
 
     # SQL Files directory configuration
     config['SQLFiles'] = {
-        'DirectoryPath': './sql_files'
+        'DirectoryPath': './sql_files' # update this path to the directory where the SQL files are stored and modify the path in the client.py file line 67
     }
 
     # Parameters configuration
