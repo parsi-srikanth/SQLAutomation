@@ -48,42 +48,47 @@ def generate_sql_request(outgoing_dir, sql_query, output_location, requestor, pr
         logger.error(f"Error generating SQL request JSON file: {e}")
         raise
 
-def main(sql_file):
+def main(passed_sql_file):
     try:
+        # Set up config and logger
         config = helper.read_config()
         logger = helper.setup_logger(config)
         
-        directory_path = config['SQLFiles']['DirectoryPath']
-        parameters = dict(config.items('parameters'))
-        outgoing_dir = config['Directories']['Incoming']
-        output_location = config['client']['output_location']
+        # Set up jinja environment based provided file, or default if no file passed.
+        template_directorypath = config['SQLFiles']['template_directorypath']
 
-        env = Environment(loader=FileSystemLoader(directory_path, followlinks=True), trim_blocks=True, lstrip_blocks=True)
+        if passed_sql_file:
+            logger.info(f"SQL file: {passed_sql_file} is being used.")
+            file_path = os.path.dirname(passed_sql_file)
+            template = os.path.basename(passed_sql_file)
+            file_name = template.replace('.sql', '')
+        else:
+            logger.info("No file specified. Using the default SQL file.")
+            defaut_template = config['SQLFiles']['default_template']
+            file_path = os.path.dirname(os.path.realpath(defaut_template))
+            file_name = os.path.basename(defaut_template).replace('.sql', '')
+            template = defaut_template
+        
+        env = Environment(loader=FileSystemLoader([file_path, template_directorypath], followlinks=True), trim_blocks=True, lstrip_blocks=True)
+        
+        # Load in optional paramaters
+        parameters = dict(config.items('parameters'))
         env.globals['tableName'] = parameters['tablename']
         env.globals['ids'] = (1, 2, 3)
-        
-        if sql_file:
-            # remove the directory path from the sql_file
-            sql_file = sql_file.split('sql_files\\')[1] #replace sql_files with the directory path of the sql files
-            sql_file = sql_file.replace('\\', '/')
-            logger.info(f"SQL file: {sql_file} is being used as the template.")
-            template_path = sql_file
-        else:
-            logger.info("Using the default SQL template.")
-            template_path = config['client']['sql_template']
-        file_name = os.path.basename(template_path).replace('.sql', '')
-        template = env.get_template(template_path)
 
-        sql_query = template.render()
+        sql_query = env.get_template(template).render()
+        logger.info("Generated SQL query")
 
-        # Provide metadata parameters
-        requestor = config['client']['requestor']
-        process_status = config['client']['process_status']
+        outgoing_dir = config['Directories']['Incoming']
+        output_location = config['client']['output_location']
 
         if not os.path.exists(outgoing_dir):
             os.makedirs(outgoing_dir)
 
-        logger.info("Generated SQL query")
+        # Provide metadata parameters
+        requestor = config['client']['requestor']
+        process_status = config['client']['process_status']
+        
         generate_sql_request(outgoing_dir, sql_query, output_location, requestor, process_status, file_name)
         logger.info("SQL request generated successfully")
 

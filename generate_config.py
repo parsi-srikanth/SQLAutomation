@@ -23,7 +23,8 @@ def generate_config():
 
     # SQL Files directory configuration
     config['SQLFiles'] = {
-        'DirectoryPath': './sql_files' # update this path to the directory where the SQL files are stored and modify the path in the client.py file line 67
+        'Template_DirectoryPath': './sql_files', # update this path to the directory where the SQL files are stored and modify the path in the client.py file line 67
+        'default_template': 'HispanicStudents/HispanicStudents.sql'
     }
 
     # Parameters configuration
@@ -34,7 +35,6 @@ def generate_config():
     config['client'] = {
         'requestor': 'Parsi',
         'process_status': 'Pending',
-        'sql_template': 'HispanicStudents/HispanicStudents.sql',
         'output_location': 'X:/Student Worker Files/Parsi/SQLAutomation/Results/'
     }
 
